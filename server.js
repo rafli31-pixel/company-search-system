@@ -20,6 +20,23 @@ app.get('/', (req, res) => {
     res.send('API Running');
 });
 
+app.get('/db-check', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT current_database(), current_schema();
+        `);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).json({
+            message: 'DB check error',
+            error: error.message
+        });
+    }
+});
+
 // TEST DB
 app.get('/test-db', async (req, res) => {
     try {
