@@ -2,9 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
-
-require('./db');
+const pool = require('./db');
 
 const companyRoutes = require('./routes/companyRoutes');
 
@@ -14,9 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-
     console.log(`${req.method} ${req.url}`);
-
     next();
 });
 
@@ -24,18 +20,27 @@ app.get('/', (req, res) => {
     res.send('API Running');
 });
 
-const pool = require('./db');
-
-app.get('/columns/:table', async (req, res) => {
-
+// TEST DB
+app.get('/test-db', async (req, res) => {
     try {
+        const result = await pool.query('SELECT NOW()');
+        res.json(result.rows);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: 'Database error',
+            error: error.message
+        });
+    }
+});
 
+// CEK KOLOM TABLE
+app.get('/columns/:table', async (req, res) => {
+    try {
         const tableName = req.params.table;
 
         const result = await pool.query(`
-            SELECT 
-                column_name,
-                data_type
+            SELECT column_name, data_type
             FROM information_schema.columns
             WHERE table_name = $1
         `, [tableName]);
@@ -43,9 +48,7 @@ app.get('/columns/:table', async (req, res) => {
         res.json(result.rows);
 
     } catch (error) {
-
         console.log(error);
-
         res.status(500).json({
             message: 'Error mengambil kolom'
         });
